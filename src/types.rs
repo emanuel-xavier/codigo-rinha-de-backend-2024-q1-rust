@@ -8,6 +8,16 @@ pub enum TransactionType {
     Credit,
 }
 
+impl From<String> for TransactionType {
+    fn from(s: String) -> Self {
+        match s.as_str() {
+            "d" => TransactionType::Debit,
+            "c" => TransactionType::Credit,
+            _ => panic!("Invalid transaction type"),
+        }
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug)]
 pub struct CreateTransactionRequest {
     #[serde(rename(deserialize = "valor"))]
@@ -62,10 +72,9 @@ pub struct Balance {
 #[derive(Serialize, Debug, sqlx::FromRow)]
 pub struct Transaction {
     #[serde(rename(serialize = "valor"))]
-    pub value: u32,
+    pub value: i32,
     #[serde(rename(serialize = "tipo"))]
-    #[sqlx(rename = "type")]
-    pub tr_type: TransactionType,
+    pub r#type: TransactionType,
     #[serde(rename(serialize = "descricao"))]
     pub description: String,
     #[serde(rename(serialize = "criado_em"))]

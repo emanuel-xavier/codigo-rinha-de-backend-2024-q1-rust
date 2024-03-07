@@ -79,8 +79,8 @@ pub async fn create_transaction(
     match sqlx::query(
         "
             INSERT INTO 
-            transaction(value, type, description, client_id)
-            VALUES($1, $2, $3, $4)
+            transaction(value, type, description, client_id, created_at)
+            VALUES($1, $2, $3, $4, $5)
         ")
         .bind(tr_req_body.value as i32)
         .bind(match tr_req_body.tr_type {
@@ -89,6 +89,7 @@ pub async fn create_transaction(
         })
         .bind(&tr_req_body.description)
         .bind(&client_id)
+        .bind(chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.6fZ").to_string())
         .fetch_optional(&mut *tx)
         .await {
             Ok(_) => {},
@@ -151,12 +152,77 @@ pub async fn get_statement(
     State(pool): State<sqlx::PgPool>,
     Path(id): Path<String>
 ) -> Response {
-    let client_id = match id.parse::<u8>() {
+    let client_id = match id.parse::<i32>() {
         Ok(id) => id,
         Err(_) => {
             return Response::builder().status(422).body(Body::empty()).unwrap();
         }
     };
-    println!("{}", client_id);
-    Response::builder().status(200).body(Body::empty()).unwrap()
+    
+    let client = match sqlx::query_as::<_, types::Client>(
+        "
+            SELECT id, balance, \"limit\" 
+            FROM clients 
+            WHERE id = $1 
+            FOR UPDATE       
+        ")
+        .bind(client_id)
+        .fetch_one(&pool)
+        .await
+        {
+            Ok(client) => client,
+            Err(sqlx::Error::RowNotFound) => return build_response!(404),
+            Err(err) => {
+                eprintln!("select client error: {}", err);
+                return build_response!(500);
+            }
+        };
+
+
+
+    let client_transactions = match sqlx::query_as!(
+        types::Transaction,
+        "
+            SELECT value, type, description, created_at 
+            FROM \"transaction\"  
+            WHERE client_id = $1 
+            ORDER BY created_at DESC 
+            LIMIT 100
+        ",
+        client_id
+        )
+        .fetch_all(&pool)
+        .await
+        {
+            Ok(transactios) => transactios,
+            Err(sqlx::Error::RowNotFound) => return build_response!(404),
+            Err(err) => {
+                eprintln!("select transactions error: {}", err);
+                return build_response!(500);
+            }
+        };
+
+
+    let serialized_body = match serde_json::to_string(
+        &types::Statement {
+            balance: types::Balance { 
+                total: client.balance, 
+                date: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.6fZ").to_string(),
+                limit: client.limit 
+            },
+            transactions: client_transactions,
+        }
+    ) {
+        Ok(json_str) => json_str,
+        Err(err) => {
+            eprintln!("serialized_body error: {}", err);
+            return build_response!(500);
+        }
+    };
+
+    Response::builder()
+        .status(200)
+        .header("content-type", "application/json")
+        .body(Body::from(serialized_body))
+        .unwrap()
 }
