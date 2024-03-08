@@ -10,7 +10,8 @@ services:
     image: ${API_DOCKER_IMAGE} 
     hostname: api01
     environment:
-      - DB_HOSTNAME=db
+      - DATABASE_URL=postgres://postgres:1234@db/postgres
+      - PORT=${API_PORT}
     
     ports:
       - "9001:${API_PORT}"
@@ -26,8 +27,6 @@ services:
   api02:
     <<: *api 
     hostname: api02
-    environment:
-      - DB_HOSTNAME=db
     ports:
       - "9002:${API_PORT}"
  

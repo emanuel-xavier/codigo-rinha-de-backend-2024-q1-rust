@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS "transaction" (
   "value"       INT NOT NULL,
   "type"        VARCHAR(2) NOT NULL, -- CHECK(type IN ('c', 'd')),
   "description" VARCHAR(10) NOT NULL,
-  "created_at"  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "created_at"  VARCHAR(28),
   "client_id"   INT NOT NULL REFERENCES clients("id")
 );
 

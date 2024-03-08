@@ -33,6 +33,6 @@ startTest() {
     done
 }
 
-#startContainers
+startContainers
 startTest
-#stopContainers
+stopContainers
