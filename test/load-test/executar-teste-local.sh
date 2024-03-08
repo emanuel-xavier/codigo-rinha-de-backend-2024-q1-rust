@@ -33,6 +33,13 @@ startTest() {
     done
 }
 
+handleCtrlC() {
+    stopContainers
+    exit 1
+}
+
+trap handleCtrlC SIGINT
+
 startContainers
 startTest
 stopContainers

@@ -39,7 +39,7 @@ pub async fn create_transaction(
     let mut tx = match pool.begin().await {
         Ok(tx) => tx,
         Err(err) => {
-            eprintln!("begin DB transaction error: {}", err);
+            // eprintln!("begin DB transaction error: {}", err);
             return build_response!(500);
         }
     };
@@ -58,7 +58,7 @@ pub async fn create_transaction(
             Ok(client) => client,
             Err(sqlx::Error::RowNotFound) => return build_response!(404),
             Err(err) => {
-                eprintln!("select and lock client error: {}", err);
+                // eprintln!("select and lock client error: {}", err);
                 return build_response!(500);
             }
         };
@@ -94,7 +94,7 @@ pub async fn create_transaction(
         .await {
             Ok(_) => {},
             Err(err) => {
-                eprintln!("create transaction error: {}", err); 
+                // eprintln!("create transaction error: {}", err); 
                 tx.rollback().await.unwrap();
                 return build_response!(500);
             }
@@ -112,7 +112,7 @@ pub async fn create_transaction(
         .await {
             Ok(_) => {},
             Err(err) => {
-                eprintln!("update client error: {}", err); 
+                // eprintln!("update client error: {}", err); 
                 tx.rollback().await.unwrap();
                 return build_response!(500);
             }
@@ -128,7 +128,7 @@ pub async fn create_transaction(
         Ok(json_str) => json_str,
         Err(err) => {
             tx.rollback().await.unwrap();
-            eprintln!("serialized_body error: {}", err);
+            // eprintln!("serialized_body error: {}", err);
             return build_response!(500);
         }
     };
@@ -140,7 +140,7 @@ pub async fn create_transaction(
                 .body(Body::from(serialized_body))
                 .unwrap(),
         Err(err) => {
-            eprintln!("transaciton commit error: {}", err); 
+            // eprintln!("transaciton commit error: {}", err); 
             build_response!(500)
         },
 
@@ -173,7 +173,7 @@ pub async fn get_statement(
             Ok(client) => client,
             Err(sqlx::Error::RowNotFound) => return build_response!(404),
             Err(err) => {
-                eprintln!("select client error: {}", err);
+                // eprintln!("select client error: {}", err);
                 return build_response!(500);
             }
         };
@@ -197,7 +197,7 @@ pub async fn get_statement(
             Ok(transactios) => transactios,
             Err(sqlx::Error::RowNotFound) => return build_response!(404),
             Err(err) => {
-                eprintln!("select transactions error: {}", err);
+                // eprintln!("select transactions error: {}", err);
                 return build_response!(500);
             }
         };
@@ -215,7 +215,7 @@ pub async fn get_statement(
     ) {
         Ok(json_str) => json_str,
         Err(err) => {
-            eprintln!("serialized_body error: {}", err);
+            // eprintln!("serialized_body error: {}", err);
             return build_response!(500);
         }
     };
